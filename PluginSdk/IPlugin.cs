@@ -1,14 +1,18 @@
 ﻿using EleCho.GoCqHttpSdk;
+using EleCho.GoCqHttpSdk.Post;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 
 namespace PluginSdk
 {
-    internal interface IPlugin
+    public enum Permission { Admin, SameUser, SameGroup };
+    public interface IPlugin
     {
         public string Name { get; }
 
         public string Description { get; }
+
+        public Permission Permission { get; }
 
         public void ConfigLogger(ILoggerFactory loggerFactory);
 
@@ -22,6 +26,6 @@ namespace PluginSdk
 
         public string CheckStillHandle { get; }
 
-        public void Handler(IFakeConsole fakeConsole);
+        public void Handler(IFakeConsole fakeConsole, CqMessagePostContext startMessage);
     }
 }
