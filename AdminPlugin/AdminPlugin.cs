@@ -42,7 +42,7 @@ namespace AdminPlugin
             this.sharedStorage = sharedStorage;
         }
 
-        public async void Handler(IFakeConsole fakeConsole, CqMessagePostContext startMessage)
+        public async Task Handler(IFakeConsole fakeConsole, CqMessagePostContext startMessage)
         {
             if(((long[])sharedStorage["AdminList"]).Contains(startMessage.UserId))
             {
