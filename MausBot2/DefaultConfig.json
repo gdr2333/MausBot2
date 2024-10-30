@@ -1,0 +1,9 @@
+{
+  "Uri": "ws://localhost:1945/MausBot/OB11",
+  "sharedStorage": {
+    "AdminList": [
+      2630604655
+    ]
+  },
+  "localStorage": {}
+}
