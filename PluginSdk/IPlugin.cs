@@ -22,9 +22,6 @@ namespace PluginSdk
 
         public string CheckStillHandle { get; }
 
-        public void Handler(IFakeConsole fakeConsole)
-        {
-
-        }
+        public void Handler(IFakeConsole fakeConsole);
     }
 }
