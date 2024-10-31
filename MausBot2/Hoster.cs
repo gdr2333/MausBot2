@@ -102,42 +102,45 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
             plugin.Config();
             _logger.LogInformation($"指令{plugin.Name}初始化完成");
         }
-        _session.PostPipeline.Use(async (context, next) =>
+        _ = _session.PostPipeline.Use(async (context, next) =>
         {
-            _fakeConsoles.RemoveAll((fakeConsole) => fakeConsole.Closed);
-            _logger.LogInformation($"收到消息：{context}");
-            if (context is CqGroupMessagePostContext cqGroupMessagePostContext)
+            _ = Task.Run(async () =>
             {
-                foreach (var fakeConsole in _fakeConsoles)
-                    switch (fakeConsole.Permission)
-                    {
-                        case Permission.Admin:
-                        case Permission.SameUser:
-                            if (fakeConsole.Gid == cqGroupMessagePostContext.GroupId && fakeConsole.Uid == cqGroupMessagePostContext.UserId && fakeConsole.StillHandle(cqGroupMessagePostContext.Message.Text))
-                            {
-                                _logger.LogInformation($"发送消息{cqGroupMessagePostContext}到{fakeConsole.Name}");
-                                fakeConsole.SendMessageToStream(cqGroupMessagePostContext.Message.Text);
-                            }
-                            break;
-                        case Permission.SameGroup:
-                            if (fakeConsole.Gid == cqGroupMessagePostContext.GroupId && fakeConsole.StillHandle(cqGroupMessagePostContext.Message.Text))
-                            {
-                                _logger.LogInformation($"发送消息{cqGroupMessagePostContext}到{fakeConsole.Name}");
-                                fakeConsole.SendMessageToStream(cqGroupMessagePostContext.Message.Text);
-                            }
-                            break;
-                    }
-                foreach (var plugin in _plugins)
-                    if(Regex.IsMatch(cqGroupMessagePostContext.Message.Text, plugin.CheckStartHandle))
-                    {
-                        _logger.LogInformation($"启动{plugin.Name}");
-                        _logger.LogInformation($"发送启动消息{cqGroupMessagePostContext}到{plugin.Name}");
-                        var fakeConsole = new FakeConsole((message) => { _logger.LogInformation($"发送消息{message}到{cqGroupMessagePostContext.GroupId}"); _session.SendGroupMessage(cqGroupMessagePostContext.GroupId, message); }, plugin.Permission, cqGroupMessagePostContext.GroupId, cqGroupMessagePostContext.UserId, (message) => Regex.IsMatch(cqGroupMessagePostContext.Message.Text, plugin.CheckStillHandle), plugin.Name);
-                        _fakeConsoles.Add(fakeConsole);
-                        await plugin.Handler(fakeConsole, cqGroupMessagePostContext);
-                        fakeConsole.Close();
-                    }
-            }
+                _fakeConsoles.RemoveAll((fakeConsole) => fakeConsole.Closed);
+                _logger.LogInformation($"收到消息：{context}");
+                if (context is CqGroupMessagePostContext cqGroupMessagePostContext)
+                {
+                    foreach (var fakeConsole in _fakeConsoles)
+                        switch (fakeConsole.Permission)
+                        {
+                            case Permission.Admin:
+                            case Permission.SameUser:
+                                if (fakeConsole.Gid == cqGroupMessagePostContext.GroupId && fakeConsole.Uid == cqGroupMessagePostContext.UserId && fakeConsole.StillHandle(cqGroupMessagePostContext.Message.Text))
+                                {
+                                    _logger.LogInformation($"发送消息{cqGroupMessagePostContext}到{fakeConsole.Name}");
+                                    fakeConsole.SendMessageToStream(cqGroupMessagePostContext.Message.Text);
+                                }
+                                break;
+                            case Permission.SameGroup:
+                                if (fakeConsole.Gid == cqGroupMessagePostContext.GroupId && fakeConsole.StillHandle(cqGroupMessagePostContext.Message.Text))
+                                {
+                                    _logger.LogInformation($"发送消息{cqGroupMessagePostContext}到{fakeConsole.Name}");
+                                    fakeConsole.SendMessageToStream(cqGroupMessagePostContext.Message.Text);
+                                }
+                                break;
+                        }
+                    foreach (var plugin in _plugins)
+                        if (Regex.IsMatch(cqGroupMessagePostContext.Message.Text, plugin.CheckStartHandle))
+                        {
+                            _logger.LogInformation($"启动{plugin.Name}");
+                            _logger.LogInformation($"发送启动消息{cqGroupMessagePostContext}到{plugin.Name}");
+                            var fakeConsole = new FakeConsole((message) => { _logger.LogInformation($"发送消息{message}到{cqGroupMessagePostContext.GroupId}"); _session.SendGroupMessage(cqGroupMessagePostContext.GroupId, message); }, plugin.Permission, cqGroupMessagePostContext.GroupId, cqGroupMessagePostContext.UserId, (message) => Regex.IsMatch(cqGroupMessagePostContext.Message.Text, plugin.CheckStillHandle), plugin.Name);
+                            _fakeConsoles.Add(fakeConsole);
+                            await plugin.Handler(fakeConsole, cqGroupMessagePostContext);
+                            fakeConsole.Close();
+                        }
+                }
+            });
             await next();
         });
         return;
