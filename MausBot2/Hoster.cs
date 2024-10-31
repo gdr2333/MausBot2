@@ -1,4 +1,5 @@
 ﻿using EleCho.GoCqHttpSdk;
+using EleCho.GoCqHttpSdk.Post;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PluginSdk;
@@ -21,6 +22,8 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
     private readonly JsonSerializerOptions _jsonSerializerOptions = new() { WriteIndented = true };
 
     private List<IPlugin> _plugins;
+
+    private List<FakeConsole> _fakeConsoles = new();
 
     public MausBot2Service(
         ILogger<MausBot2Service> logger,
@@ -56,6 +59,7 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
         _logger.LogInformation("日志已启动。");
         _logger.LogInformation("开始加载数据");
         _config = (Config)JsonSerializer.Deserialize(await File.ReadAllTextAsync("config.json"), typeof(Config));
+        _config.sharedStorage["AdminList"] = Array.ConvertAll(((JsonElement)_config.sharedStorage["AdminList"]).EnumerateArray().ToArray(), n => n.GetInt64());
         _logger.LogInformation("初始化连接......");
         _session = new CqWsSession(new CqWsSessionOptions()
         {
@@ -87,7 +91,7 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
                 }
             }
         }
-        foreach(var plugin in _plugins)
+        foreach (var plugin in _plugins)
         {
             _logger.LogInformation($"指令{plugin.Name}加载完成");
             plugin.ConfigLogger(_loggerFactory);
@@ -98,6 +102,44 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
             plugin.Config();
             _logger.LogInformation($"指令{plugin.Name}初始化完成");
         }
+        _session.PostPipeline.Use(async (context, next) =>
+        {
+            _fakeConsoles.RemoveAll((fakeConsole) => fakeConsole.Closed);
+            _logger.LogInformation($"收到消息：{context}");
+            if (context is CqGroupMessagePostContext cqGroupMessagePostContext)
+            {
+                foreach (var fakeConsole in _fakeConsoles)
+                    switch (fakeConsole.Permission)
+                    {
+                        case Permission.Admin:
+                        case Permission.SameUser:
+                            if (fakeConsole.Gid == cqGroupMessagePostContext.GroupId && fakeConsole.Uid == cqGroupMessagePostContext.UserId && fakeConsole.StillHandle(cqGroupMessagePostContext.Message.Text))
+                            {
+                                _logger.LogInformation($"发送消息{cqGroupMessagePostContext}到{fakeConsole.Name}");
+                                fakeConsole.SendMessageToStream(cqGroupMessagePostContext.Message.Text);
+                            }
+                            break;
+                        case Permission.SameGroup:
+                            if (fakeConsole.Gid == cqGroupMessagePostContext.GroupId && fakeConsole.StillHandle(cqGroupMessagePostContext.Message.Text))
+                            {
+                                _logger.LogInformation($"发送消息{cqGroupMessagePostContext}到{fakeConsole.Name}");
+                                fakeConsole.SendMessageToStream(cqGroupMessagePostContext.Message.Text);
+                            }
+                            break;
+                    }
+                foreach (var plugin in _plugins)
+                    if(Regex.IsMatch(cqGroupMessagePostContext.Message.Text, plugin.CheckStartHandle))
+                    {
+                        _logger.LogInformation($"启动{plugin.Name}");
+                        _logger.LogInformation($"发送启动消息{cqGroupMessagePostContext}到{plugin.Name}");
+                        var fakeConsole = new FakeConsole((message) => { _logger.LogInformation($"发送消息{message}到{cqGroupMessagePostContext.GroupId}"); _session.SendGroupMessage(cqGroupMessagePostContext.GroupId, message); }, plugin.Permission, cqGroupMessagePostContext.GroupId, cqGroupMessagePostContext.UserId, (message) => Regex.IsMatch(cqGroupMessagePostContext.Message.Text, plugin.CheckStillHandle), plugin.Name);
+                        _fakeConsoles.Add(fakeConsole);
+                        await plugin.Handler(fakeConsole, cqGroupMessagePostContext);
+                        fakeConsole.Close();
+                    }
+            }
+            await next();
+        });
         return;
     }
 
