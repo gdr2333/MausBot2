@@ -44,7 +44,7 @@ namespace AdminPlugin
 
         public async Task Handler(IFakeConsole fakeConsole, CqMessagePostContext startMessage)
         {
-            if(((long[])sharedStorage["AdminList"]).Contains(startMessage.UserId))
+            if (((long[])sharedStorage["AdminList"]).Contains(startMessage.UserId))
             {
                 fakeConsole.WriteLine("您已经是管理员了！");
                 return;
@@ -53,7 +53,7 @@ namespace AdminPlugin
             logger.LogInformation($"验证码是：{capcha}");
             fakeConsole.WriteLine("请输入验证码：");
             var capchaInput = await fakeConsole.ReadLine();
-            if(capchaInput == capcha)
+            if (capchaInput == capcha)
             {
                 var adminList = (long[])sharedStorage["AdminList"];
                 var newAdminList = new long[adminList.Length + 1];

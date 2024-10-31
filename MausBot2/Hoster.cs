@@ -1,7 +1,10 @@
 ﻿using EleCho.GoCqHttpSdk;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using PluginSdk;
+using System.Reflection;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace MausBot2;
 
@@ -15,6 +18,10 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
 
     private Config _config;
 
+    private readonly JsonSerializerOptions _jsonSerializerOptions = new() { WriteIndented = true };
+
+    private List<IPlugin> _plugins;
+
     public MausBot2Service(
         ILogger<MausBot2Service> logger,
         IHostApplicationLifetime appLifetime)
@@ -24,6 +31,8 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
         appLifetime.ApplicationStarted.Register(OnStarted);
         appLifetime.ApplicationStopping.Register(OnStopping);
         appLifetime.ApplicationStopped.Register(OnStopped);
+
+        _plugins = [new AdminPlugin.AdminPlugin()];
     }
 
     Task IHostedLifecycleService.StartingAsync(CancellationToken cancellationToken)
@@ -52,10 +61,43 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
         {
             BaseUri = _config.Uri,  // WebSocket 地址
         });
-        _session.Start();
+        await _session.StartAsync();
         _logger.LogInformation("连接成功");
         _logger.LogInformation("开始加载指令");
-
+        var folder = new DirectoryInfo($"{Environment.CurrentDirectory}/plugins/");
+        foreach (var i in folder.GetDirectories())
+        {
+            foreach (var j in i.GetFiles())
+            {
+                if (Regex.Match(j.Name, ".*.dll").Success)
+                {
+                    Assembly asm;
+                    try
+                    {
+                        asm = Assembly.LoadFile(j.FullName);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogWarning(e.ToString());
+                        continue;
+                    }
+                    foreach (var type in asm.GetTypes())
+                        if (type.IsPublic && type.GetInterface("IPlugin") != null)
+                            _plugins.Add((IPlugin)Activator.CreateInstance(type));
+                }
+            }
+        }
+        foreach(var plugin in _plugins)
+        {
+            _logger.LogInformation($"指令{plugin.Name}加载完成");
+            plugin.ConfigLogger(_loggerFactory);
+            plugin.ConfigSession(_session);
+            if (!_config.localStorage.ContainsKey(plugin.Name))
+                _config.localStorage.TryAdd(plugin.Name, new());
+            plugin.ConfigStorage(_config.sharedStorage, _config.localStorage[plugin.Name]);
+            plugin.Config();
+            _logger.LogInformation($"指令{plugin.Name}初始化完成");
+        }
         return;
     }
 
@@ -80,7 +122,7 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
     {
         _logger.LogInformation("6. StoppingAsync has been called.");
         _logger.LogInformation("开始保存数据......");
-        await File.WriteAllTextAsync("config.json", JsonSerializer.Serialize(_config, new JsonSerializerOptions { WriteIndented = true }));
+        await File.WriteAllTextAsync("config.json", JsonSerializer.Serialize(_config, _jsonSerializerOptions));
         _logger.LogInformation("数据保存完成");
         return;
     }
