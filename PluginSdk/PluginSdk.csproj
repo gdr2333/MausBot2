@@ -12,7 +12,7 @@
     <Product>MausBot2.PluginSdk</Product>
     <PackageProjectUrl>https://gitee.com/Vremq_vperyod/maus-bot-2</PackageProjectUrl>
     <RepositoryUrl>https://gitee.com/Vremq_vperyod/maus-bot-2</RepositoryUrl>
-    <PackageLicenseExpression> GPL-3.0-or-later</PackageLicenseExpression>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>

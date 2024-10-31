@@ -140,6 +140,38 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
                             fakeConsole.Close();
                         }
                 }
+                else if(context is CqPrivateMessagePostContext cqPrivateMessagePostContext)
+                {
+                    foreach (var fakeConsole in _fakeConsoles)
+                        switch (fakeConsole.Permission)
+                        {
+                            case Permission.Admin:
+                            case Permission.SameUser:
+                                if (fakeConsole.Gid == cqPrivateMessagePostContext.UserId && fakeConsole.Uid == cqPrivateMessagePostContext.UserId && fakeConsole.StillHandle(cqPrivateMessagePostContext.Message.Text))
+                                {
+                                    _logger.LogInformation($"发送消息{cqPrivateMessagePostContext}到{fakeConsole.Name}");
+                                    fakeConsole.SendMessageToStream(cqPrivateMessagePostContext.Message.Text);
+                                }
+                                break;
+                            case Permission.SameGroup:
+                                if (fakeConsole.Gid == cqPrivateMessagePostContext.UserId && fakeConsole.StillHandle(cqPrivateMessagePostContext.Message.Text))
+                                {
+                                    _logger.LogInformation($"发送消息{cqPrivateMessagePostContext}到{fakeConsole.Name}");
+                                    fakeConsole.SendMessageToStream(cqPrivateMessagePostContext.Message.Text);
+                                }
+                                break;
+                        }
+                    foreach (var plugin in _plugins)
+                        if (Regex.IsMatch(cqPrivateMessagePostContext.Message.Text, plugin.CheckStartHandle))
+                        {
+                            _logger.LogInformation($"启动{plugin.Name}");
+                            _logger.LogInformation($"发送启动消息{cqPrivateMessagePostContext}到{plugin.Name}");
+                            var fakeConsole = new FakeConsole((message) => { _logger.LogInformation($"发送消息{message}到{cqPrivateMessagePostContext.UserId}"); _session.SendGroupMessage(cqPrivateMessagePostContext.UserId, message); }, plugin.Permission, cqPrivateMessagePostContext.UserId, cqPrivateMessagePostContext.UserId, (message) => Regex.IsMatch(cqPrivateMessagePostContext.Message.Text, plugin.CheckStillHandle), plugin.Name);
+                            _fakeConsoles.Add(fakeConsole);
+                            await plugin.Handler(fakeConsole, cqPrivateMessagePostContext);
+                            fakeConsole.Close();
+                        }
+                }
             });
             await next();
         });
