@@ -138,7 +138,7 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
                         {
                             _logger.LogInformation($"启动{plugin.Name}");
                             _logger.LogInformation($"发送启动消息{cqGroupMessagePostContext}到{plugin.Name}");
-                            var fakeConsole = new FakeConsole((message) => { _logger.LogInformation($"发送消息{message}到{cqGroupMessagePostContext.GroupId}"); _session.SendGroupMessage(cqGroupMessagePostContext.GroupId, message); }, plugin.Permission, cqGroupMessagePostContext.GroupId, cqGroupMessagePostContext.UserId, (message) => Regex.IsMatch(cqGroupMessagePostContext.Message.Text, plugin.CheckStillHandle), plugin.Name);
+                            var fakeConsole = new FakeConsole((message) => { _logger.LogInformation($"发送消息{message}到{cqGroupMessagePostContext.GroupId}"); _session.SendGroupMessage(cqGroupMessagePostContext.GroupId, message); }, plugin.Permission, cqGroupMessagePostContext.GroupId, cqGroupMessagePostContext.UserId, (message) => Regex.IsMatch(message, plugin.CheckStillHandle), plugin.Name);
                             _fakeConsoles.Add(fakeConsole);
                             await plugin.Handler(fakeConsole, cqGroupMessagePostContext);
                             fakeConsole.Close();
@@ -173,7 +173,7 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
                         {
                             _logger.LogInformation($"启动{plugin.Name}");
                             _logger.LogInformation($"发送启动消息{cqPrivateMessagePostContext}到{plugin.Name}");
-                            var fakeConsole = new FakeConsole((message) => { _logger.LogInformation($"发送消息{message}到{cqPrivateMessagePostContext.UserId}"); _session.SendGroupMessage(cqPrivateMessagePostContext.UserId, message); }, plugin.Permission, cqPrivateMessagePostContext.UserId, cqPrivateMessagePostContext.UserId, (message) => Regex.IsMatch(cqPrivateMessagePostContext.Message.Text, plugin.CheckStillHandle), plugin.Name);
+                            var fakeConsole = new FakeConsole((message) => { _logger.LogInformation($"发送消息{message}到{cqPrivateMessagePostContext.UserId}"); _session.SendGroupMessage(cqPrivateMessagePostContext.UserId, message); }, plugin.Permission, cqPrivateMessagePostContext.UserId, cqPrivateMessagePostContext.UserId, (message) => Regex.IsMatch(message, plugin.CheckStillHandle), plugin.Name);
                             _fakeConsoles.Add(fakeConsole);
                             await plugin.Handler(fakeConsole, cqPrivateMessagePostContext);
                             fakeConsole.Close();
