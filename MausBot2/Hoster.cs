@@ -120,6 +120,7 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
                                 {
                                     _logger.LogInformation($"发送消息{cqGroupMessagePostContext}到{fakeConsole.Name}");
                                     fakeConsole.SendMessageToStream(cqGroupMessagePostContext.Message.Text);
+                                    goto end;
                                 }
                                 break;
                             case Permission.SameGroup:
@@ -127,6 +128,7 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
                                 {
                                     _logger.LogInformation($"发送消息{cqGroupMessagePostContext}到{fakeConsole.Name}");
                                     fakeConsole.SendMessageToStream(cqGroupMessagePostContext.Message.Text);
+                                    goto end;
                                 }
                                 break;
                         }
@@ -139,6 +141,7 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
                             _fakeConsoles.Add(fakeConsole);
                             await plugin.Handler(fakeConsole, cqGroupMessagePostContext);
                             fakeConsole.Close();
+                            goto end;
                         }
                 }
                 else if(context is CqPrivateMessagePostContext cqPrivateMessagePostContext)
@@ -152,6 +155,7 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
                                 {
                                     _logger.LogInformation($"发送消息{cqPrivateMessagePostContext}到{fakeConsole.Name}");
                                     fakeConsole.SendMessageToStream(cqPrivateMessagePostContext.Message.Text);
+                                    goto end;
                                 }
                                 break;
                             case Permission.SameGroup:
@@ -159,6 +163,7 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
                                 {
                                     _logger.LogInformation($"发送消息{cqPrivateMessagePostContext}到{fakeConsole.Name}");
                                     fakeConsole.SendMessageToStream(cqPrivateMessagePostContext.Message.Text);
+                                    goto end;
                                 }
                                 break;
                         }
@@ -171,8 +176,10 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
                             _fakeConsoles.Add(fakeConsole);
                             await plugin.Handler(fakeConsole, cqPrivateMessagePostContext);
                             fakeConsole.Close();
+                            goto end;
                         }
                 }
+            end:;
             });
             await next();
         });
