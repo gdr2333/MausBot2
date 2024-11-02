@@ -92,6 +92,7 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
             }
         }
         _plugins.Sort(new PluginComp());
+        _plugins.Reverse();
         foreach (var plugin in _plugins)
         {
             _logger.LogInformation($"指令{plugin.Name}加载完成");
