@@ -18,6 +18,8 @@ namespace TestPlugin
 
         public string CheckStillHandle => "";
 
+        public int Priority => 0;
+
         public void Config()
         {
         }

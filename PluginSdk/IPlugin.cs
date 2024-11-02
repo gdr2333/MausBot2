@@ -27,5 +27,7 @@ namespace PluginSdk
         public string CheckStillHandle { get; }
 
         public Task Handler(IFakeConsole fakeConsole, CqMessagePostContext startMessage);
+
+        public int Priority { get; }
     }
 }

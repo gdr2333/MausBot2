@@ -18,6 +18,8 @@ namespace AdminPlugin
 
         public Permission Permission => Permission.SameUser;
 
+        public int Priority => 1;
+
         ILogger logger;
 
         ConcurrentDictionary<string, object> sharedStorage;
