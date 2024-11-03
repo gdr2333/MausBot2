@@ -106,6 +106,11 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
         }
         _ = _session.PostPipeline.Use(async (context, next) =>
         {
+            if(context is CqHeartbeatPostContext)
+            {
+                await next();
+                return;
+            }
             _ = Task.Run(async () =>
             {
                 _fakeConsoles.RemoveAll((fakeConsole) => fakeConsole.Closed);
