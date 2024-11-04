@@ -2,13 +2,31 @@
 
 namespace PluginSdk
 {
+    /// <summary>
+    /// 虚拟终端类
+    /// </summary>
     public interface IFakeConsole
     {
+        /// <summary>
+        /// 清空虚拟终端
+        /// </summary>
         public void Clear();
 
+        /// <summary>
+        /// 关闭虚拟终端
+        /// </summary>
         public void Close();
 
+        /// <summary>
+        /// 读取一行消息（异步）
+        /// </summary>
+        /// <returns>读取的消息</returns>
         public Task<string> ReadLine();
+
+        /// <summary>
+        /// 获取当前行数
+        /// </summary>
+        public int Lines { get; }
 
         public void Write(bool sth);
 

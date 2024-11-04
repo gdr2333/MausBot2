@@ -9,7 +9,9 @@ using System.Text.RegularExpressions;
 
 namespace MausBot2;
 
-public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
+#pragma warning disable CA2254
+
+public sealed partial class MausBot2Service : IHostedService, IHostedLifecycleService
 {
     private readonly ILogger _logger;
 
@@ -21,9 +23,9 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
 
     private readonly JsonSerializerOptions _jsonSerializerOptions = new() { WriteIndented = true };
 
-    private List<IPlugin> _plugins;
+    private readonly List<IPlugin> _plugins;
 
-    private List<FakeConsole> _fakeConsoles = new();
+    private readonly List<FakeConsole> _fakeConsoles = [];
 
     public MausBot2Service(
         ILogger<MausBot2Service> logger,
@@ -58,13 +60,13 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
             }));
         _logger.LogInformation("日志已启动。");
         _logger.LogInformation("开始加载数据");
-        _config = (Config)JsonSerializer.Deserialize(await File.ReadAllTextAsync("config.json"), typeof(Config));
+        _config = (Config)JsonSerializer.Deserialize(await File.ReadAllTextAsync("config.json", cancellationToken), typeof(Config));
         _config.sharedStorage["AdminList"] = Array.ConvertAll(((JsonElement)_config.sharedStorage["AdminList"]).EnumerateArray().ToArray(), n => n.GetInt64());
         await LinkToServer();
         LoadPlugin();
         _ = _session.PostPipeline.Use(async (context, next) =>
         {
-            if(context is CqHeartbeatPostContext)
+            if (context is CqHeartbeatPostContext)
             {
                 await next();
                 return;
@@ -97,18 +99,18 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
                                 break;
                         }
                     foreach (var plugin in _plugins)
-                        if (Regex.IsMatch(cqGroupMessagePostContext.Message.Text, plugin.CheckStartHandle))
+                        if (plugin.CheckStartHandle.IsMatch(cqGroupMessagePostContext.Message.Text))
                         {
                             _logger.LogInformation($"启动{plugin.Name}");
                             _logger.LogInformation($"发送启动消息{cqGroupMessagePostContext}到{plugin.Name}");
-                            var fakeConsole = new FakeConsole((message) => { _logger.LogInformation($"发送消息{message}到{cqGroupMessagePostContext.GroupId}"); _session.SendGroupMessage(cqGroupMessagePostContext.GroupId, message); }, plugin.Permission, cqGroupMessagePostContext.GroupId, cqGroupMessagePostContext.UserId, (message) => Regex.IsMatch(message, plugin.CheckStillHandle), plugin.Name);
+                            var fakeConsole = new FakeConsole((message) => { _logger.LogInformation($"发送消息{message}到{cqGroupMessagePostContext.GroupId}"); _session.SendGroupMessage(cqGroupMessagePostContext.GroupId, message); }, plugin.Permission, cqGroupMessagePostContext.GroupId, cqGroupMessagePostContext.UserId, plugin.CheckStillHandle.IsMatch, plugin.Name);
                             _fakeConsoles.Add(fakeConsole);
                             await plugin.Handler(fakeConsole, cqGroupMessagePostContext);
                             fakeConsole.Close();
                             goto end;
                         }
                 }
-                else if(context is CqPrivateMessagePostContext cqPrivateMessagePostContext)
+                else if (context is CqPrivateMessagePostContext cqPrivateMessagePostContext)
                 {
                     foreach (var fakeConsole in _fakeConsoles)
                         switch (fakeConsole.Permission)
@@ -132,11 +134,11 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
                                 break;
                         }
                     foreach (var plugin in _plugins)
-                        if (Regex.IsMatch(cqPrivateMessagePostContext.Message.Text, plugin.CheckStartHandle))
+                        if (plugin.CheckStartHandle.IsMatch(cqPrivateMessagePostContext.Message.Text))
                         {
                             _logger.LogInformation($"启动{plugin.Name}");
                             _logger.LogInformation($"发送启动消息{cqPrivateMessagePostContext}到{plugin.Name}");
-                            var fakeConsole = new FakeConsole((message) => { _logger.LogInformation($"发送消息{message}到{cqPrivateMessagePostContext.UserId}"); _session.SendGroupMessage(cqPrivateMessagePostContext.UserId, message); }, plugin.Permission, cqPrivateMessagePostContext.UserId, cqPrivateMessagePostContext.UserId, (message) => Regex.IsMatch(message, plugin.CheckStillHandle), plugin.Name);
+                            var fakeConsole = new FakeConsole((message) => { _logger.LogInformation($"发送消息{message}到{cqPrivateMessagePostContext.UserId}"); _session.SendGroupMessage(cqPrivateMessagePostContext.UserId, message); }, plugin.Permission, cqPrivateMessagePostContext.UserId, cqPrivateMessagePostContext.UserId, plugin.CheckStillHandle.IsMatch, plugin.Name);
                             _fakeConsoles.Add(fakeConsole);
                             await plugin.Handler(fakeConsole, cqPrivateMessagePostContext);
                             fakeConsole.Close();
@@ -171,7 +173,7 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
     {
         _logger.LogInformation("6. StoppingAsync has been called.");
         _logger.LogInformation("开始保存数据......");
-        await File.WriteAllTextAsync("config.json", JsonSerializer.Serialize(_config, _jsonSerializerOptions));
+        await File.WriteAllTextAsync("config.json", JsonSerializer.Serialize(_config, _jsonSerializerOptions), cancellationToken);
         _logger.LogInformation("数据保存完成");
         return;
     }
@@ -203,7 +205,7 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
         {
             foreach (var j in i.GetFiles())
             {
-                if (Regex.Match(j.Name, ".dll$").Success)
+                if (DllRegex().Match(j.Name).Success)
                 {
                     Assembly asm;
                     try
@@ -246,4 +248,7 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
         await _session.StartAsync();
         _logger.LogInformation("连接成功");
     }
+
+    [GeneratedRegex(".dll$")]
+    private static partial Regex DllRegex();
 }

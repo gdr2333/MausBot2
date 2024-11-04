@@ -63,6 +63,8 @@ namespace MausBot2
             Closed = true;
         }
 
+        public int Lines => _input.Reader.Count;
+
         public async Task<string> ReadLine() => await _input.Reader.ReadAsync();
 
         public void Write(bool sth)

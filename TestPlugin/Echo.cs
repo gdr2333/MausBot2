@@ -3,10 +3,11 @@ using EleCho.GoCqHttpSdk.Post;
 using Microsoft.Extensions.Logging;
 using PluginSdk;
 using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 
 namespace TestPlugin
 {
-    public class Echo : IPlugin
+    public partial class Echo : IPlugin
     {
         public string Name => "Echo";
 
@@ -14,9 +15,9 @@ namespace TestPlugin
 
         public Permission Permission => Permission.SameUser;
 
-        public string CheckStartHandle => "^#echo$";
+        public Regex CheckStartHandle => StartEchoRegex();
 
-        public string CheckStillHandle => "";
+        public Regex CheckStillHandle => NullRegex();
 
         public int Priority => 0;
 
@@ -46,5 +47,11 @@ namespace TestPlugin
                 fakeConsole.WriteLine(i);
             }
         }
+
+        [GeneratedRegex("^#StartEcho$")]
+        private static partial Regex StartEchoRegex();
+
+        [GeneratedRegex("")]
+        private static partial Regex NullRegex();
     }
 }

@@ -3,18 +3,21 @@ using EleCho.GoCqHttpSdk.Post;
 using Microsoft.Extensions.Logging;
 using PluginSdk;
 using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
+
+#pragma warning disable CA2254
 
 namespace AdminPlugin
 {
-    public class AdminPlugin : IPlugin
+    public partial class AdminPlugin : IPlugin
     {
         public string Name => "管理员插件";
 
         public string Description => "添加管理员";
 
-        public string CheckStartHandle => "^#成为管理$";
+        public Regex CheckStartHandle => AsAdminRegex();
 
-        public string CheckStillHandle => "^.*$";
+        public Regex CheckStillHandle => CapchaRegex();
 
         public Permission Permission => Permission.SameUser;
 
@@ -68,5 +71,11 @@ namespace AdminPlugin
                 fakeConsole.WriteLine("验证码错误！");
             }
         }
+
+        [GeneratedRegex("^#成为管理$")]
+        private static partial Regex AsAdminRegex();
+
+        [GeneratedRegex("^.*$")]
+        private static partial Regex CapchaRegex();
     }
 }
