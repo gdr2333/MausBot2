@@ -60,50 +60,8 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
         _logger.LogInformation("开始加载数据");
         _config = (Config)JsonSerializer.Deserialize(await File.ReadAllTextAsync("config.json"), typeof(Config));
         _config.sharedStorage["AdminList"] = Array.ConvertAll(((JsonElement)_config.sharedStorage["AdminList"]).EnumerateArray().ToArray(), n => n.GetInt64());
-        _logger.LogInformation("初始化连接......");
-        _session = new CqWsSession(new CqWsSessionOptions()
-        {
-            BaseUri = _config.Uri,  // WebSocket 地址
-        });
-        await _session.StartAsync();
-        _logger.LogInformation("连接成功");
-        _logger.LogInformation("开始加载指令");
-        var folder = new DirectoryInfo($"{Environment.CurrentDirectory}/plugins/");
-        foreach (var i in folder.GetDirectories())
-        {
-            foreach (var j in i.GetFiles())
-            {
-                if (Regex.Match(j.Name, ".*.dll").Success)
-                {
-                    Assembly asm;
-                    try
-                    {
-                        asm = Assembly.LoadFile(j.FullName);
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogWarning(e.ToString());
-                        continue;
-                    }
-                    foreach (var type in asm.GetTypes())
-                        if (type.IsPublic && type.GetInterface("IPlugin") != null)
-                            _plugins.Add((IPlugin)Activator.CreateInstance(type));
-                }
-            }
-        }
-        _plugins.Sort(new PluginComp());
-        _plugins.Reverse();
-        foreach (var plugin in _plugins)
-        {
-            _logger.LogInformation($"指令{plugin.Name}加载完成");
-            plugin.ConfigLogger(_loggerFactory);
-            plugin.ConfigSession(_session);
-            if (!_config.localStorage.ContainsKey(plugin.Name))
-                _config.localStorage.TryAdd(plugin.Name, new());
-            plugin.ConfigStorage(_config.sharedStorage, _config.localStorage[plugin.Name]);
-            plugin.Config();
-            _logger.LogInformation($"指令{plugin.Name}初始化完成");
-        }
+        await LinkToServer();
+        LoadPlugin();
         _ = _session.PostPipeline.Use(async (context, next) =>
         {
             if(context is CqHeartbeatPostContext)
@@ -235,5 +193,57 @@ public sealed class MausBot2Service : IHostedService, IHostedLifecycleService
     private void OnStopped()
     {
         _logger.LogInformation("9. OnStopped has been called.");
+    }
+
+    private void LoadPlugin()
+    {
+        _logger.LogInformation("开始加载指令");
+        var folder = new DirectoryInfo($"{Environment.CurrentDirectory}/plugins/");
+        foreach (var i in folder.GetDirectories())
+        {
+            foreach (var j in i.GetFiles())
+            {
+                if (Regex.Match(j.Name, ".dll$").Success)
+                {
+                    Assembly asm;
+                    try
+                    {
+                        asm = Assembly.LoadFile(j.FullName);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogWarning(e.ToString());
+                        continue;
+                    }
+                    foreach (var type in asm.GetTypes())
+                        if (type.IsPublic && type.GetInterface("IPlugin") != null)
+                            _plugins.Add((IPlugin)Activator.CreateInstance(type));
+                }
+            }
+        }
+        _plugins.Sort(new PluginComp());
+        _plugins.Reverse();
+        foreach (var plugin in _plugins)
+        {
+            _logger.LogInformation($"指令{plugin.Name}加载完成");
+            plugin.ConfigLogger(_loggerFactory);
+            plugin.ConfigSession(_session);
+            if (!_config.localStorage.ContainsKey(plugin.Name))
+                _config.localStorage.TryAdd(plugin.Name, new());
+            plugin.ConfigStorage(_config.sharedStorage, _config.localStorage[plugin.Name]);
+            plugin.Config();
+            _logger.LogInformation($"指令{plugin.Name}初始化完成");
+        }
+    }
+
+    private async Task LinkToServer()
+    {
+        _logger.LogInformation("初始化连接......");
+        _session = new CqWsSession(new CqWsSessionOptions()
+        {
+            BaseUri = _config.Uri,  // WebSocket 地址
+        });
+        await _session.StartAsync();
+        _logger.LogInformation("连接成功");
     }
 }
