@@ -1,5 +1,7 @@
 ﻿using EleCho.GoCqHttpSdk.Message;
 
+namespace PluginSdk;
+
 /// <summary>
 /// 表示用于输入和输出操作的虚拟控制台。
 /// </summary>
