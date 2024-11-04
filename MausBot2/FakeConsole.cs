@@ -67,24 +67,24 @@ namespace MausBot2
 
         public async Task<string> ReadLine() => await _input.Reader.ReadAsync();
 
-        public void Write(bool sth)
+        public void Write(bool value)
         {
             lock (_outPut)
-                _outPut.Append(sth);
+                _outPut.Append(value);
             CheckCleaner();
         }
 
-        public void Write(char sth)
+        public void Write(char value)
         {
             lock (_outPut)
-                _outPut.Append(sth);
+                _outPut.Append(value);
             CheckCleaner();
         }
 
-        public void Write(char[] sth)
+        public void Write(char[] value)
         {
             lock (_outPut)
-                _outPut.Append(sth);
+                _outPut.Append(value);
             CheckCleaner();
         }
 
@@ -95,65 +95,65 @@ namespace MausBot2
             CheckCleaner();
         }
 
-        public void Write(decimal sth)
+        public void Write(decimal value)
         {
             lock (_outPut)
-                _outPut.Append(sth);
+                _outPut.Append(value);
             CheckCleaner();
         }
 
-        public void Write(double sth)
+        public void Write(double value)
         {
             lock (_outPut)
-                _outPut.Append(sth);
+                _outPut.Append(value);
             CheckCleaner();
         }
 
-        public void Write(int sth)
+        public void Write(int value)
         {
             lock (_outPut)
-                _outPut.Append(sth);
+                _outPut.Append(value);
             CheckCleaner();
         }
 
-        public void Write(long sth)
+        public void Write(long value)
         {
             lock (_outPut)
-                _outPut.Append(sth);
+                _outPut.Append(value);
             CheckCleaner();
         }
 
-        public void Write(object sth)
+        public void Write(object value)
         {
             lock (_outPut)
-                _outPut.Append(sth);
+                _outPut.Append(value);
             CheckCleaner();
         }
-        public void Write(float sth)
+        public void Write(float value)
         {
             lock (_outPut)
-                _outPut.Append(sth);
-            CheckCleaner();
-        }
-
-        public void Write(string sth)
-        {
-            lock (_outPut)
-                _outPut.Append(sth);
+                _outPut.Append(value);
             CheckCleaner();
         }
 
-        public void Write(uint sth)
+        public void Write(string value)
         {
             lock (_outPut)
-                _outPut.Append(sth);
+                _outPut.Append(value);
             CheckCleaner();
         }
 
-        public void Write(ulong sth)
+        public void Write(uint value)
         {
             lock (_outPut)
-                _outPut.Append(sth);
+                _outPut.Append(value);
+            CheckCleaner();
+        }
+
+        public void Write(ulong value)
+        {
+            lock (_outPut)
+                _outPut.Append(value);
             CheckCleaner();
         }
 
@@ -164,10 +164,10 @@ namespace MausBot2
             CheckCleaner();
         }
 
-        public void WriteLine(string sth)
+        public void WriteLine(string value)
         {
             lock (_outPut)
-                _outPut.AppendLine(sth);
+                _outPut.AppendLine(value);
             CheckCleaner();
         }
 

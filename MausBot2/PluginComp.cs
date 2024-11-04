@@ -6,15 +6,14 @@ namespace MausBot2
     {
         public int Compare(IPlugin? x, IPlugin? y)
         {
-            if (x == null)
-                if (y == null)
-                    return 0;
-                else
-                    return -1;
-            else if (y == null)
-                return 1;
-            else
-                return x.Priority.CompareTo(y.Priority);
+            // 如果两个插件都为null，它们相等
+            if (x == null && y == null) return 0;
+            // 如果x为null，它小于y
+            if (x == null) return -1;
+            // 如果y为null，它小于x
+            if (y == null) return 1;
+            // 比较两个插件的优先级
+            return x.Priority.CompareTo(y.Priority);
         }
     }
 }
