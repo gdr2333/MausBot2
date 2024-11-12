@@ -2,6 +2,7 @@
 using System.Text.Json.Serialization;
 
 namespace MausBot2;
+
 public class Config
 {
     [JsonInclude]
