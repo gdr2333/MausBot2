@@ -249,6 +249,6 @@ public sealed partial class MausBot2Service : IHostedService, IHostedLifecycleSe
         _logger.LogInformation("连接成功");
     }
 
-    [GeneratedRegex(".dll$")]
+    [GeneratedRegex("\\.dll$")]
     private static partial Regex DllRegex();
 }
